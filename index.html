@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presente Virtual</title>
+    <link rel="shortcut icon" type="imagex/png" href="./kirby.ico">
+    <style>
+        body {
+            font-family: 'Georgia', serif;
+            margin: 0;
+            padding: 0;
+            background-color: #e6f7e6;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Alinha ao topo da página */
+            min-height: 100vh; /* Garante que a página ocupe a altura total da viewport */
+            padding: 20px; /* Adiciona espaçamento ao redor */
+            box-sizing: border-box; /* Inclui padding e border na largura e altura */
+            overflow-y: auto; /* Permite rolagem vertical */
+        }
+        .container {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            overflow: hidden; /* Evita que o conteúdo vaze para fora */
+        }
+        h1 {
+            color: #77a588;
+            font-family: 'Patrick Hand', cursive; /* Fonte estilo escrita à mão */
+        }
+        .input-section {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #key, #messageSelector {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: calc(100% - 24px);
+            max-width: 400px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+            background-color: #d7efd9;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: #a8d8a1;
+            color: white;
+            cursor: pointer;
+            width: calc(100% - 24px);
+            max-width: 400px;
+            box-sizing: border-box;
+        }
+        button:hover {
+            background-color: #96c890;
+        }
+        .letter {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-top: 20px;
+            background-color: #e7f3ea;
+            box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            font-family: 'Patrick Hand', cursive; /* Fonte estilo escrita à mão */
+            line-height: 1.6;
+            text-align: left;
+            color: #77a588;
+            overflow: auto; /* Adiciona scroll se necessário */
+            max-height: 300px; /* Altura máxima para o texto criptografado */
+            white-space: pre-wrap; /* Mantém espaços e quebras de linha */
+            word-break: break-word; /* Evita que palavras longas estourem o limite da div */
+        }
+        #decryptedText {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #8f14e7; /* Roxo mais visível */
+            font-family: 'Patrick Hand', cursive; /* Fonte estilo escrita à mão */
+            overflow: auto; /* Adiciona scroll se necessário */
+            max-height: 300px; /* Altura máxima para o texto descriptografado */
+            white-space: pre-wrap; /* Mantém espaços e quebras de linha */
+            word-break: break-word; /* Evita que palavras longas estourem o limite da div */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Cartinha secreta</h1>
+        <div class="input-section">
+            <select id="messageSelector">
+                <option value="1">Carta 1</option>
+                <option value="2">Carta 2</option>
+                <option value="3">Carta 3</option>
+            </select>
+            <input id="key" placeholder="Insira a chave">
+            <button onclick="decryptText()">Revelar</button>
+        </div>
+
+        <!-- Área para texto criptografado -->
+        <div id="encryptedText" class="letter"></div>
+
+        <!-- Área para texto descriptografado -->
+        <div id="decryptedText" class="letter"></div>
+    </div>
+
+    <!-- Player de música -->
+    <audio id="backgroundMusic" loop>
+        <source src="fallen-down.mp3" type="audio/mpeg">
+        Seu navegador não suporta o elemento de áudio.
+    </audio>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js"></script>
+    <script>
+        // Mensagens encriptadas (exemplo)
+        const encryptedMessages = {
+            1: "U2FsdGVkX19LWiMRRKukfBj3aFYhW3zTjg7zBiummeuL1QyLWOEDwBx3RkIkF9OMZrM/FodR496j/u5CwoiXi9Ahne2HGye+BVqnPhKxUltK7Gx2vTFiI95+VTpWKnt+e5CIZxoso4xvkpetXRiIsnuaHFq22IBIf+14vX3RQZcgX1SmpRBJ+jjB2+AUzefLBWWHySkRPvWvNcuS1frPkbiB0NzGsED2Ie+NRrFzDEjjXyyQjY+2CIjRPBOWKpA5dAkEOaMnurE8ut3TWdVCnX06w87CfqyQOGuou/YCugcDWHZlPu2ArHaZg1Qg2xpsCFYa8e3OKBJU7AeZGcEAhDBG39O0ElGRP2wUwJnPzlvhUQWMYd9emnmo8Rm9tJHV0zgOvNNTa42Zsy5cr0A2XiaNS+qTxhRp9n19cM/H8D+yjGmF2FNJdSeOCg/GtKqoeovjZ/PcmRv8o1G2wLBNR9qZVhleKYw7g5gEU6Bo8zsCbASYyrjQSOzRSsvI6MSzauXfYANIvf+vhtZDXYfHhIWLT6mraIMZ7N1Dt7wMN1XrSfv6zAc+tMELPN1H266LWt4JwGwt3m1aUEt5nbtlHIcutNE8vwpHGo094YAQFb6dVhLo7Gqr675BYz/AXCRLWdSWcn98+gFwlAI/S98KabdTxrjaqWlRO9MNiOMTYZILglTAHIG+WYZAQhvSgVwgdri3kxCi5o1I/9JFS5SakM+4zZbnlLe26IoKGP84YutL3loyQB3JHoSBfUtkuiLiuz458PToIGS5M6pI6sV1J7jYGZGdEKZ4E7jelsqXBmhlTNzaYtyqoXROhnzOABsHz13i05YUZJ3sZQIfkqSCB/a1g1m+wYrtCG9z+NMT4OphtikE4/jjgFYzFJZxBg6ggQKoSKH+MmpswG7WIkJXcez66qoVbbfNARXb0lDtoBk=",
+            2: "U2FsdGVkX191M1NvWenDD8jorHD8vFRGCuZglkx01WZYWrTiX1xW3xqz7X7TWVLwr8mmPE2J82LGRrYdKZRqu8Bs0nfHT01Vjt7Vqb2vzMdrZe6GoYC7YNgkvaHluITmpKk9/B8UEQ8bwAUp3gcwoi2kS61jLRdykrPjKcRt+QAlKcqHQeU4DpIf/u3cGo/WqmgTu1Y2bQ0VTQ7pXUWGpLujZvoppP0sc3FQvtkiA4DhalpYLKcFEjqwQfEk3wXMKv5Eed22Mh4npeU+RWBLN+jH+OPSQFOngJUGB8B4a1J3nilWgb+mUuqSeTNurUP0/Qcc254BYp6+X5982A/M1xiqIogcGsg5iJtFOuY+XCNOTSz7+9H4ZCl1eoPOAGsA5wlagAz0hhlxvbVxvFBiVMsjAchl0oUJaut6MmZYwOCoA44grr1qf8Rwz8IV/WGo/nIpnt+Ww/7Hi7PrgzVfsMeZo5J1gRfOEXAkWZc76dSNWwtdAgYuq1nAUAH/TlmIw3pOwMdhyuRjBu9u2Fff08Wxv9XxnmWdO/rq1MeOZMVi1+OOJDXFBh0ZrSlw9PIIxg4B6jxrXK0F+542Sd0kEAn5UvmfqV+2vMt+59BeQ4GWW9b4/cjD6sCCCAHKiE9ojxoFlVHWDaTm/ETac19RXUPDcdDDeqLmzzyfIQ8jEqkyoGsjmIIwhyJdmTJf4F1w70+vaDIVk3o8HZ+juD/JTdutmbAGdaz58/ZamCPEVuWWbhwUGdzr+GQbpEhPBmh87H3ZD9bDhhirZp0f/myvU39NUXS5/jj2gTuyZnZwe4KeMWSo0l3QToaE5rdx/eEIquXVh7bxVrfg6MSZRnyVPcPTMTNpVj/FUXMsGyZkGOFxYOT0RBXKkRSwKMZ9gnxl50NYI2hCP8gncfWOPeKEGzQzrSTizsRIoUOZhdhC6+5xXS6s7QDhIC8uX1FZdatZtPEoPTgH71GVBNmvcHA2aN0/1smOeSIazhGoXI98D+coCbRks1F6sKMMtRY5POvMp0CeywZNhGa5Wo81mJYpmmoaRHyKTrsOyBpDQGXia3Ivyt90P3HRw8/3FM2YO+jh+Ui5+pto0QG59igk2QVrbaZ20zUnGmhmue6Vp6027SWEi2ZpelaXyeP7rjdqa2LBhNkYv8OeNOVjjiAb/arK94rD28rC4mZODwXi2eL1O+keeMcDs09x/gItvYpRI/ghOFb6GClpWzY0IQBDzMLP4ak5W9BUbf3fS/VhrNXdz7Xm0qp0/RsefJZdeMtDUW81",
+            3: "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"
+        };
+
+        document.getElementById('messageSelector').addEventListener('change', function() {
+            const selectedMessage = this.value;
+            document.getElementById('encryptedText').innerText = encryptedMessages[selectedMessage];
+        });
+
+        // Atualiza o texto criptografado inicial
+        document.getElementById('messageSelector').dispatchEvent(new Event('change'));
+
+        function decryptText() {
+            const key = document.getElementById('key').value;
+            const encryptedText = document.getElementById('encryptedText').innerText;
+
+            try {
+                const bytes = CryptoJS.AES.decrypt(encryptedText, key);
+                const decryptedText = bytes.toString(CryptoJS.enc.Utf8);
+
+                if (decryptedText) {
+                    displayTextLetterByLetter(decryptedText);
+                } else {
+                    document.getElementById('decryptedText').innerText = "Chave incorreta!";
+                }
+            } catch (e) {
+                document.getElementById('decryptedText').innerText = "Erro ao descriptografar!";
+            }
+        }
+
+        function displayTextLetterByLetter(text) {
+            const decryptedTextElement = document.getElementById('decryptedText');
+            decryptedTextElement.innerText = "";
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < text.length) {
+                    if (text.charAt(i) === ' ') {
+                        decryptedTextElement.innerHTML += '&nbsp;'; // Adiciona espaço em branco
+                    } else {
+                        decryptedTextElement.innerText += text.charAt(i);
+                    }
+                    i++;
+                } else {
+                    clearInterval(interval);
+                    // Adiciona o link na segunda mensagem
+                    if (document.getElementById('messageSelector').value === '1') {
+                        decryptedTextElement.innerHTML += '<br><a href="URL_DA_SUA_IMAGEM.jpg" target="_blank">Seu Kirby diferenciado rsrs</a>';
+                    }
+                }
+            }, 50); // Ajuste a velocidade aqui (50ms por letra)
+        }
+
+    </script>
+    <script>
+// Reproduz a música em loop
+    window.onload = function() {
+        const music = document.getElementById('backgroundMusic');
+        music.volume = 0.05; // Define o volume baixo
+        music.play();
+    };
+    </script>
+</body>
+</html>
